@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	
+	<flow name="books-apiFlow" doc:id="39a38b0f-f689-48cf-aa27-b42120e24144" >
+		<http:listener doc:name="Listener" doc:id="06066adb-d76a-465a-81f5-62bf873a7022" config-ref="HTTP_Listener_config" path="/api/retrieveBooks">
+			<http:error-response >
+				<http:body ><![CDATA[#[output application/json --- payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<logger level="INFO" doc:name="Start Logger" doc:id="148d29c0-480d-4b06-b0ce-7d3e1ed5f32a" message="books-apiFlow Started"/>
+		<set-variable value="#[attributes.headers.source_system]" doc:name="source_system" doc:id="4cfcb399-9f26-4ad2-a76e-78053e640c69" variableName="source_system"/>
+		<set-variable value="#[attributes.headers.source_system_id]" doc:name="source_system_id" doc:id="3779fb1e-fd94-4b16-bcd2-5718496ae40b" variableName="source_system_id"/>
+		<logger level="INFO" doc:name="Log headers" doc:id="f822b718-b4ef-44f1-b78f-3209621c404d" message="Request received from source system is: #[vars.source_system] and user id is: #[vars.source_system_id]"/>
+		<file:read doc:name="Read" doc:id="f42f4f96-6d6f-40e4-a011-e91682a841be" path="D:\data\input\books.xml" outputMimeType="application/xml"/>
+		<logger level="INFO" doc:name="XML Payload" doc:id="801af069-59b5-48cd-bfe6-30e20d440556" message="Input payload is: #[payload]" />
+		<ee:transform doc:name="xml to json" doc:id="216f487e-59fd-4cc1-9ffc-fb65ca6357cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.bookstore.*book map ((book, bi) -> {
+	title: book.title,
+	author: book.author,
+	year: book.year,
+	price: book.price,
+	datepublished: book.datepublished as Date {
+		format: "MMddyyyy"
+	} as String {
+		format: "ddMMyyyy"
+	}
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="1d39d80d-71d9-439b-bd5d-1cade12365ee" path="D:\data\output\books_output.json"/>
+		<logger level="INFO" doc:name="JSON Payload" doc:id="7931d3b5-98a9-46cc-b16d-5aba0f0a6753" message="Output payload after JSON transformation is: #[payload]"/>
+		<logger level="INFO" doc:name="End Logger" doc:id="f6052066-a83a-443e-aba3-b19decbaab7a" message="books-apiFlow Completed"/>
+	</flow>
+</mule>

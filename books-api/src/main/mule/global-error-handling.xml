@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="books-api-global-error-handling" doc:id="9129b3ea-5d77-4242-aa0b-313bec51649d" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="10487b68-27fa-4e66-be39-97daa3328202" type="ANY">
+			<logger level="INFO" doc:name="Logger" doc:id="88a55d46-37fe-4a27-a42a-623806280ea9" message="Logging the error: #[error.description]"/>
+			<logger level="INFO" doc:name="Log user name and source system" doc:id="2193d75f-ac20-4d3f-b3d0-892c5b6da887" message="Request received from source system is: #[vars.source_system] and user id is: #[vars.source_system_id]"/>
+			<ee:transform doc:name="Error Json" doc:id="58901d1d-2db9-46ec-9c32-913a50c90d30" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: 500,
+	errorMessage: error.description default "Internal Server Error",
+	errorType: error.errorType default "Mule Error",
+	sourceSystem: vars.source_system,
+	userId: vars.source_system_id
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="4d951915-615e-46a5-9890-b5a6a36c8eae" />
+		</on-error-propagate>
+	</error-handler>
+</mule>
